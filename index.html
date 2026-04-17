@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>借贷管理台</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="auth-card">
+      <p class="eyebrow">安全登录</p>
+      <h2>进入借贷管理台</h2>
+      <p class="auth-copy">请输入账号和密码后再访问借款、资金方、提醒和统计数据。</p>
+      <form id="auth-form" class="auth-form">
+        <label>
+          登录账号
+          <input type="text" name="username" autocomplete="username" placeholder="请输入账号" required>
+        </label>
+        <label>
+          登录密码
+          <input type="password" name="password" autocomplete="current-password" placeholder="请输入密码" required>
+        </label>
+        <p id="auth-error" class="auth-error" hidden>账号或密码不正确，请重新输入。</p>
+        <button type="submit" class="primary-btn">登录进入系统</button>
+      </form>
+    </div>
+  </div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <p class="eyebrow">Lender Console</p>
+        <h1>借贷管理<br>控制台</h1>
+        <p class="sidebar-copy">面向个人借贷业务的本地管理系统，集中管理借款、资金来源、收息计划、展期记录与统计分析。</p>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-link active" data-view="dashboard">总览</button>
+        <button class="nav-link" data-view="loans">借款台账</button>
+        <button class="nav-link" data-view="funders">资金方</button>
+        <button class="nav-link" data-view="reminders">提醒中心</button>
+        <button class="nav-link" data-view="stats">统计分析</button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <p>数据默认保存在当前浏览器和局域网共享文件中，不依赖云端也能使用。</p>
+        <p>后续可继续扩展为企业微信提醒、云端同步版本或手机应用版本。</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="mobile-topbar">
+        <div>
+          <p class="eyebrow">Mobile</p>
+          <strong>借贷管理台</strong>
+        </div>
+        <button class="mobile-quick-action" data-view-jump="dashboard">新增借款</button>
+      </header>
+
+      <header class="hero">
+        <div>
+          <p class="eyebrow">局域网版本</p>
+          <h2>把每一笔借款的利息、本金、资金成本、提醒时间和展期变化统一管起来</h2>
+          <p>支持多种收息方式、资金来源拆分、提前还本、提前结清、展期登记、局域网共享和多维统计。</p>
+        </div>
+        <div class="hero-actions">
+          <details class="utility-menu">
+            <summary>系统操作</summary>
+            <div class="utility-menu-panel">
+              <button id="auth-settings-btn" class="ghost-btn" type="button">账号设置</button>
+              <button id="logout-btn" class="ghost-btn" type="button">退出登录</button>
+              <button id="notify-btn" class="ghost-btn" type="button">开启浏览器提醒</button>
+              <button id="seed-data-btn" class="ghost-btn" type="button">导入示例数据</button>
+            </div>
+          </details>
+          <details class="utility-menu">
+            <summary>导出数据</summary>
+            <div class="utility-menu-panel">
+              <button id="export-loans-csv-btn" class="ghost-btn" type="button">导出借款 CSV</button>
+              <button id="export-funders-csv-btn" class="ghost-btn" type="button">导出资金方 CSV</button>
+              <button id="export-schedules-csv-btn" class="ghost-btn" type="button">导出计划 CSV</button>
+              <button id="export-btn" class="primary-btn" type="button">导出 JSON 数据</button>
+            </div>
+          </details>
+        </div>
+      </header>
+
+      <section class="view active" id="dashboard-view">
+        <div id="mobile-summary" class="mobile-summary-strip"></div>
+        <div class="metrics-grid" id="metrics-grid"></div>
+
+        <div class="panel-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">新增借款</p>
+                <h3>登记一笔新的借贷记录</h3>
+              </div>
+              <button type="button" id="toggle-advanced-btn" class="tag-btn">展开高级设置</button>
+            </div>
+            <form id="loan-form" class="loan-form" novalidate>
+              <div class="form-intro full-width">
+                <strong>常用 5 项</strong>
+                <span>先填借款人、本金、利率、期限、收息方式即可快速建单，其余内容按需补充。</span>
+              </div>
+              <div class="form-step-indicator">
+                <span class="step-dot active" data-step-dot="0">1</span>
+                <span class="step-dot" data-step-dot="1">2</span>
+                <span class="step-dot" data-step-dot="2">3</span>
+              </div>
+
+              <div class="form-step active" data-form-step="0">
+                <label>
+                  借款人
+                  <input type="text" name="borrower" placeholder="如：张先生" required>
+                </label>
+                <label>
+                  借出本金
+                  <input type="number" min="0" step="0.01" name="principal" placeholder="如：50000" required>
+                </label>
+                <label>
+                  年化利率（%）
+                  <input type="number" min="0" step="0.01" name="annualRate" placeholder="如：12" required>
+                </label>
+              </div>
+
+              <div class="form-step" data-form-step="1">
+                <label>
+                  起息日期
+                  <input type="date" name="startDate" required>
+                </label>
+                <label>
+                  期限（月）
+                  <input type="number" min="1" step="1" name="termMonths" placeholder="如：12" required>
+                </label>
+                <label>
+                  首次收款日
+                  <input type="date" name="firstDueDate" required>
+                </label>
+              </div>
+
+              <div class="form-step advanced-step" data-form-step="2" id="advanced-fields">
+                <label>
+                  提前提醒（天）
+                  <input type="number" min="0" step="1" name="reminderDays" value="3" required>
+                </label>
+                <section class="funding-section full-width">
+                  <div class="funding-head">
+                    <div>
+                      <p class="eyebrow">资金构成</p>
+                      <h4>拆分每笔本金的资金来源和资金成本</h4>
+                    </div>
+                    <button type="button" id="add-funding-source-btn" class="mini-btn">新增来源</button>
+                  </div>
+                  <div id="funding-sources-list" class="funding-sources-list"></div>
+                  <p id="funding-total-note" class="helper-text"></p>
+                </section>
+                <label>
+                  收息方式
+                  <select name="interestMode" id="interest-mode-select">
+                    <option value="monthly">按月收息</option>
+                    <option value="quarterly">按季度收息</option>
+                    <option value="advance_once">放款时一次性收息</option>
+                    <option value="maturity">到期一次性收息</option>
+                    <option value="custom">自定义节点</option>
+                  </select>
+                </label>
+                <label class="full-width" id="custom-schedule-wrap" hidden>
+                  自定义收款节点
+                  <textarea name="customSchedule" rows="4" placeholder="每行一条，格式：2026-05-15,1500,0&#10;最后一列本金可省略，例如：2026-08-15,2000,50000"></textarea>
+                </label>
+                <label>
+                  借款状态
+                  <select name="status">
+                    <option value="active">执行中</option>
+                    <option value="paused">暂缓</option>
+                    <option value="closed">已结清</option>
+                  </select>
+                </label>
+                <label class="full-width">
+                  备注
+                  <textarea name="notes" rows="3" placeholder="如：线下转账，月底前确认回款"></textarea>
+                </label>
+              </div>
+
+              <div class="form-step-actions full-width">
+                <button type="button" id="prev-step-btn" class="ghost-btn">上一步</button>
+                <button type="button" id="next-step-btn" class="ghost-btn">下一步</button>
+                <button type="submit" id="submit-loan-btn" class="primary-btn">保存借款并生成收款计划</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">近期重点</p>
+                <h3>最近 7 天提醒</h3>
+                <p class="helper-text">从这里直接进入待办、借款台账和资金方页面。</p>
+              </div>
+              <div class="panel-actions">
+                <button class="tag-btn" type="button" data-view-jump="reminders">处理待办</button>
+                <button class="tag-btn" type="button" data-view-jump="loans">查看台账</button>
+                <button class="tag-btn" type="button" data-view-jump="funders">查看资金方</button>
+              </div>
+            </div>
+            <div id="upcoming-reminders" class="list-stack"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="loans-view">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">借款台账</p>
+              <h3>全部借款记录</h3>
+            </div>
+            <input id="search-input" class="search-input" type="search" placeholder="搜索借款人或备注">
+          </div>
+          <div id="loan-filter-bar" class="filter-bar">
+            <button type="button" class="tag-btn active" data-loan-filter="all">全部</button>
+            <button type="button" class="tag-btn" data-loan-filter="active">执行中</button>
+            <button type="button" class="tag-btn" data-loan-filter="overdue">已逾期</button>
+            <button type="button" class="tag-btn" data-loan-filter="due_7">7天内到期</button>
+            <button type="button" class="tag-btn" data-loan-filter="closed">已结清</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>借款人</th>
+                  <th>本金</th>
+                  <th>年化利率</th>
+                  <th>起息日期</th>
+                  <th>下次节点</th>
+                  <th>状态</th>
+                  <th>累计净收益</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="loans-table-body"></tbody>
+            </table>
+          </div>
+          <div id="loans-cards" class="mobile-loan-list"></div>
+        </section>
+      </section>
+
+      <section class="view" id="funders-view">
+        <div class="panel-grid dual">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">资金方概览</p>
+                <h3>按出资人查看占用与成本</h3>
+              </div>
+            </div>
+            <div id="funder-summary" class="stats-list"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">资金方明细</p>
+                <h3>每个资金来源的当前拆借情况</h3>
+              </div>
+            </div>
+            <div id="funder-breakdown" class="list-stack"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="reminders-view">
+        <div class="panel-grid dual">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">优先处理</p>
+                <h3>今天该先处理的待办</h3>
+                <p class="helper-text">按逾期、今天到期、待付成本的顺序集中展示。</p>
+              </div>
+            </div>
+            <div id="today-reminders" class="list-stack"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">接下来</p>
+                <h3>近期即将发生的节点</h3>
+                <p class="helper-text">提前查看未来 7 / 30 / 90 天的回款和结算安排。</p>
+              </div>
+              <label class="inline-control">
+                <span>查看范围</span>
+                <select id="reminder-range-select">
+                  <option value="7">7 天</option>
+                  <option value="30" selected>30 天</option>
+                  <option value="90">90 天</option>
+                </select>
+              </label>
+            </div>
+            <div id="month-plan" class="list-stack"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="stats-view">
+        <div class="panel-grid dual">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">趋势分析</p>
+                <h3>月度收支变化</h3>
+              </div>
+            </div>
+            <div id="monthly-stats" class="stats-list"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">状态分布</p>
+                <h3>借款执行情况与提醒概览</h3>
+              </div>
+            </div>
+            <div id="status-stats" class="stats-list"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="detail-dialog">
+    <article class="dialog-card">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">借款详情</p>
+          <h3 id="detail-title"></h3>
+        </div>
+        <div class="dialog-actions">
+          <div class="dialog-actions-primary">
+            <button id="record-principal-btn" class="mini-btn is-primary">登记还本</button>
+          </div>
+          <div class="dialog-actions-secondary">
+            <button id="early-settle-btn" class="mini-btn">提前结清</button>
+            <button id="extend-loan-btn" class="mini-btn">登记展期</button>
+            <button id="close-dialog-btn" class="ghost-btn">关闭</button>
+          </div>
+        </div>
+      </div>
+      <div id="detail-summary" class="detail-grid"></div>
+      <section class="schedule-section">
+        <div class="panel-head compact">
+          <div>
+            <p class="eyebrow">展期记录</p>
+            <h4>历史展期与新条件</h4>
+          </div>
+        </div>
+        <div id="extension-list" class="schedule-list"></div>
+      </section>
+      <section class="schedule-section">
+        <div class="panel-head compact">
+          <div>
+            <p class="eyebrow">收款计划</p>
+            <h4>收款与成本结算节点</h4>
+          </div>
+        </div>
+        <div id="schedule-list" class="schedule-list"></div>
+      </section>
+    </article>
+  </dialog>
+
+  <dialog id="auth-settings-dialog">
+    <article class="dialog-card auth-settings-card">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">账号设置</p>
+          <h3>修改登录账号与密码</h3>
+        </div>
+        <button id="close-auth-settings-btn" class="ghost-btn">关闭</button>
+      </div>
+      <form id="auth-settings-form" class="auth-form">
+        <label>
+          当前账号
+          <input type="text" name="currentUsername" readonly>
+        </label>
+        <label>
+          当前密码
+          <input type="password" name="currentPassword" placeholder="请输入当前密码" required>
+        </label>
+        <label>
+          新账号
+          <input type="text" name="newUsername" placeholder="请输入新账号" required>
+        </label>
+        <label>
+          新密码
+          <input type="password" name="newPassword" placeholder="请输入新密码" required>
+        </label>
+        <label>
+          确认新密码
+          <input type="password" name="confirmPassword" placeholder="请再次输入新密码" required>
+        </label>
+        <p id="auth-settings-error" class="auth-error" hidden></p>
+        <button type="submit" class="primary-btn">保存账号设置</button>
+      </form>
+    </article>
+  </dialog>
+
+  <nav class="mobile-tabbar">
+    <button class="mobile-tab active" data-view="dashboard">
+      <span>总览</span>
+      <small>首页</small>
+    </button>
+    <button class="mobile-tab" data-view="loans">
+      <span>台账</span>
+      <small>借款</small>
+    </button>
+    <button class="mobile-tab" data-view="funders">
+      <span>资金</span>
+      <small>出资方</small>
+    </button>
+    <button class="mobile-tab" data-view="reminders">
+      <span>提醒</span>
+      <small>待办</small>
+    </button>
+    <button class="mobile-tab" data-view="stats">
+      <span>统计</span>
+      <small>分析</small>
+    </button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>

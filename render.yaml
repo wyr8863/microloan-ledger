@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: microloan-ledger
+    runtime: docker
+    plan: starter
+    autoDeploy: true
+    healthCheckPath: /api/state
+    envVars:
+      - key: DATA_DIR
+        value: /var/data
+      - key: MAX_BACKUPS
+        value: "50"
+    disk:
+      name: ledger-data
+      mountPath: /var/data
+      sizeGB: 1
